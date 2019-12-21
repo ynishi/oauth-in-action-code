@@ -46,10 +46,13 @@ app.get("/authorize", function(req, res) {
   /*
    * Send the user to the authorization server
    */
+
+  state = randomstring.generate();
   var authrizeUrl = buildUrl(authServer.authorizationEndpoint, {
     response_type: "code",
     client_id: client.client_id,
-    redirect_uri: client.redirect_uris[0]
+    redirect_uri: client.redirect_uris[0],
+    state: state
   });
   res.redirect(authrizeUrl);
 });
@@ -76,6 +79,11 @@ app.get("/callback", function(req, res) {
   });
 
   var body = JSON.parse(tokRes.getBody());
+  if (req.query.state != state) {
+    res.render("error", { error: "State value did not match" });
+    return;
+  }
+  console.log(req.query.state);
   console.log(body);
   res.render("index", {
     access_token: body.access_token,
