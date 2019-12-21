@@ -58,6 +58,29 @@ app.get("/callback", function(req, res) {
   /*
    * Parse the response from the authorization server and get a token
    */
+  var code = req.query.code;
+  var form_data = qs.stringify({
+    grant_type: "authorization_code",
+    code: code,
+    redirect_uri: client.redirect_uris[0]
+  });
+  var headers = {
+    "Content-type": "application/x-www-form-urlencoded",
+    Authorization:
+      "Basic " + encodeClientCredentials(client.client_id, client.client_secret)
+  };
+
+  var tokRes = request("POST", authServer.tokenEndpoint, {
+    body: form_data,
+    headers: headers
+  });
+
+  var body = JSON.parse(tokRes.getBody());
+  console.log(body);
+  res.render("index", {
+    access_token: body.access_token,
+    scope: scope
+  });
 });
 
 app.get("/fetch_resource", function(req, res) {
