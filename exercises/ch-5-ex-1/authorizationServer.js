@@ -109,6 +109,29 @@ app.post("/token", function(req, res) {
   /*
    * Process the request, issue an access token
    */
+  var auth = req.headers["authorization"];
+  if (auth) {
+    var clientCredentials = decodeClientCredentials(auth);
+    var clientId = clientCredentials.id;
+    var clientSecret = clientCredentials.secret;
+  }
+  if (req.body.client_id) {
+    if (clinetId) {
+      res.status(401).json({ error: "invalid_clinet" });
+      return;
+    }
+    var clientId = req.body.clinet_id;
+    var clientSecret = req.body.client_secret;
+  }
+  var client = getClient(clientId);
+  if (!client) {
+    res.status(401).json({ error: "invalid_clinet" });
+    return;
+  }
+  if (client.client_secret != clientSecret) {
+    res.status(401).json({ error: "invalid_client" });
+    return;
+  }
 });
 
 var buildUrl = function(base, options, hash) {
