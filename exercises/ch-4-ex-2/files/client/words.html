@@ -66,9 +66,21 @@
 				  <% if (result == 'norm') { %><p><span class="label label-danger">Failure</span></p><% } %>
  			  	  <a class="btn btn-danger" href="/delete_word">DELETE the last word</a> 
 			  </div>
-		  </div>
+			</div>
 		  
-      </div>
+	  </div>
+	  <div class="row">
+		  </div class="col-md-4">
+			  <div class="well">
+				  <h3>fetch last value</h3>
+				  <% if (result == 'fetch') { %><p><span class="label label-success">Success</span></p><% } %>
+				  <% if (result == 'nofetch') { %><p><span class="label label-danger">Failure</span></p><% } %>
+				  <p><%- word ? 'Word: ' + word : ''%></p>
+				  <p><%- timestamp ? 'Timestamp: ' + timestamp : ''%></p>
+			  	  <a class="btn btn-info" href="/fetch_word">Fetch last value</a> 
+			  </div>
+		  </div>
+	  </div>
 
     </div><!-- /.container -->
 
