@@ -73,7 +73,7 @@ app.post("/approve", function(req, res) {
    */
   var reqid = req.body.reqid;
   var query = requests[reqid];
-  delete requests[repid];
+  delete requests[reqid];
 
   if (!query) {
     res.render("error", { error: "No matching authorization request" });
