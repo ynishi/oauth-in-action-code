@@ -116,22 +116,47 @@ app.post("/token", function(req, res) {
     var clientSecret = clientCredentials.secret;
   }
   if (req.body.client_id) {
-    if (clinetId) {
-      res.status(401).json({ error: "invalid_clinet" });
+    if (clientId) {
+      res.status(401).json({ error: "invalid_client" });
       return;
     }
-    var clientId = req.body.clinet_id;
+    var clientId = req.body.client_id;
     var clientSecret = req.body.client_secret;
   }
   var client = getClient(clientId);
   if (!client) {
-    res.status(401).json({ error: "invalid_clinet" });
+    res.status(401).json({ error: "invalid_client" });
     return;
   }
   if (client.client_secret != clientSecret) {
     res.status(401).json({ error: "invalid_client" });
     return;
   }
+  if (req.body.grant_type == "authorization_code") {
+  } else {
+    res.status(400).json({ error: "unsupported_grant_type" });
+    return;
+  }
+  var code = codes[req.body.code];
+  if (code) {
+  } else {
+    res.status(400).json({ error: "invalid_grant" });
+    return;
+  }
+  delete codes[req.body.code];
+  if (code.request.client_id == clientId) {
+  } else {
+    res.status(400).json({ error: "invalid_grant" });
+    return;
+  }
+  var access_token = randomstring.generate();
+  nosql.insert({ access_token: access_token, client_id: clientId });
+  var token_response = {
+    access_token: access_token,
+    token_type: "Bearer"
+  };
+  res.status(200).json(token_response);
+  return;
 });
 
 var buildUrl = function(base, options, hash) {
