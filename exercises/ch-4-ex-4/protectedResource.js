@@ -1,90 +1,119 @@
 var express = require("express");
-var bodyParser = require('body-parser');
-var cons = require('consolidate');
-var nosql = require('nosql').load('database.nosql');
-var __ = require('underscore');
-var cors = require('cors');
+var bodyParser = require("body-parser");
+var cons = require("consolidate");
+var nosql = require("nosql").load("database.nosql");
+var __ = require("underscore");
+var cors = require("cors");
 
 var app = express();
 
 app.use(bodyParser.urlencoded({ extended: true })); // support form-encoded bodies (for bearer tokens)
 
-app.engine('html', cons.underscore);
-app.set('view engine', 'html');
-app.set('views', 'files/protectedResource');
-app.set('json spaces', 4);
+app.engine("html", cons.underscore);
+app.set("view engine", "html");
+app.set("views", "files/protectedResource");
+app.set("json spaces", 4);
 
-app.use('/', express.static('files/protectedResource'));
+app.use("/", express.static("files/protectedResource"));
 app.use(cors());
 
 var resource = {
-	"name": "Protected Resource",
-	"description": "This data has been protected by OAuth 2.0"
+  name: "Protected Resource",
+  description: "This data has been protected by OAuth 2.0"
 };
 
 var getAccessToken = function(req, res, next) {
-	var inToken = null;
-	var auth = req.headers['authorization'];
-	if (auth && auth.toLowerCase().indexOf('bearer') == 0) {
-		inToken = auth.slice('bearer '.length);
-	} else if (req.body && req.body.access_token) {
-		inToken = req.body.access_token;
-	} else if (req.query && req.query.access_token) {
-		inToken = req.query.access_token
-	}
-	
-	console.log('Incoming token: %s', inToken);
-	nosql.one(function(token) {
-		if (token.access_token == inToken) {
-			return token;	
-		}
-	}, function(err, token) {
-		if (token) {
-			console.log("We found a matching token: %s", inToken);
-		} else {
-			console.log('No matching token was found.');
-		}
-		req.access_token = token;
-		next();
-		return;
-	});
+  var inToken = null;
+  var auth = req.headers["authorization"];
+  if (auth && auth.toLowerCase().indexOf("bearer") == 0) {
+    inToken = auth.slice("bearer ".length);
+  } else if (req.body && req.body.access_token) {
+    inToken = req.body.access_token;
+  } else if (req.query && req.query.access_token) {
+    inToken = req.query.access_token;
+  }
+
+  console.log("Incoming token: %s", inToken);
+  nosql.one(
+    function(token) {
+      if (token.access_token == inToken) {
+        return token;
+      }
+    },
+    function(err, token) {
+      if (token) {
+        console.log("We found a matching token: %s", inToken);
+      } else {
+        console.log("No matching token was found.");
+      }
+      req.access_token = token;
+      next();
+      return;
+    }
+  );
 };
 
 var requireAccessToken = function(req, res, next) {
-	if (req.access_token) {
-		next();
-	} else {
-		res.status(401).end();
-	}
+  if (req.access_token) {
+    next();
+  } else {
+    res.status(401).end();
+  }
 };
 
 var aliceFavorites = {
-	'movies': ['The Multidmensional Vector', 'Space Fights', 'Jewelry Boss'],
-	'foods': ['bacon', 'pizza', 'bacon pizza'],
-	'music': ['techno', 'industrial', 'alternative']
+  movies: ["The Multidmensional Vector", "Space Fights", "Jewelry Boss"],
+  foods: ["bacon", "pizza", "bacon pizza"],
+  music: ["techno", "industrial", "alternative"]
 };
 
 var bobFavorites = {
-	'movies': ['An Unrequited Love', 'Several Shades of Turquoise', 'Think Of The Children'],
-	'foods': ['bacon', 'kale', 'gravel'],
-	'music': ['baroque', 'ukulele', 'baroque ukulele']
+  movies: [
+    "An Unrequited Love",
+    "Several Shades of Turquoise",
+    "Think Of The Children"
+  ],
+  foods: ["bacon", "kale", "gravel"],
+  music: ["baroque", "ukulele", "baroque ukulele"]
 };
 
-app.get('/favorites', getAccessToken, requireAccessToken, function(req, res) {
-	
-	/*
-	 * Get different user information based on the information of who approved the token
-	 */
-	
-	var unknown = {user: 'Unknown', favorites: {movies: [], foods: [], music: []}};
-	res.json(unknown);
+app.get("/favorites", getAccessToken, requireAccessToken, function(req, res) {
+  /*
+   * Get different user information based on the information of who approved the token
+   */
 
+  var user = "";
+  var fav = { movies: [], foods: [], music: [] };
+  if (req.access_token.user == "alice") {
+    user = "Alice";
+    favAll = aliceFavorites;
+  } else if (req.access_token.user == "bob") {
+    user = "Bob";
+    favAll = bobFavorites;
+  } else {
+    user = "Unknown";
+    favAll = { movies: [], foods: [], music: [] };
+  }
+  var fav = {
+    user: user,
+    favorites: { movies: [], foods: [], music: [] }
+  };
+  if (__.contains(req.access_token.scope, "movies")) {
+    fav.favorites.movies = favAll.movies;
+  }
+  if (__.contains(req.access_token.scope, "foods")) {
+    fav.favorites.foods = favAll.foods;
+  }
+  if (__.contains(req.access_token.scope, "music")) {
+    fav.favorites.music = favAll.music;
+  }
+  console.log(fav);
+  res.json(fav);
 });
 
-var server = app.listen(9002, 'localhost', function () {
+var server = app.listen(9002, "localhost", function() {
   var host = server.address().address;
   var port = server.address().port;
 
-  console.log('OAuth Resource Server is listening at http://%s:%s', host, port);
+  console.log("OAuth Resource Server is listening at http://%s:%s", host, port);
 });
- 
