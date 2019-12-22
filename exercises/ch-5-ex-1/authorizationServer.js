@@ -150,10 +150,17 @@ app.post("/token", function(req, res) {
     return;
   }
   var access_token = randomstring.generate();
-  nosql.insert({ access_token: access_token, client_id: clientId });
+  var expires_in = new Date();
+  expires_in.setSeconds(expires_in.getSeconds() + 30);
+  nosql.insert({
+    access_token: access_token,
+    client_id: clientId,
+    expires_in: expires_in
+  });
   var token_response = {
     access_token: access_token,
-    token_type: "Bearer"
+    token_type: "Bearer",
+    expires_in: expires_in
   };
   res.status(200).json(token_response);
   return;
